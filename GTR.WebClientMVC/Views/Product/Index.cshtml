@@ -1,0 +1,177 @@
+﻿@{
+    ViewData["Title"] = "Product List";
+}
+
+<div class="container mt-5">
+    <h2>Product List</h2>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search products...">
+                <button class="btn btn-outline-secondary" type="button" id="searchButton">Search</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered" id="productsTable">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Products will be loaded here via AJAX -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="loadingSpinner" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Loading products...</p>
+    </div>
+
+    <div id="errorAlert" class="alert alert-danger d-none" role="alert">
+        Failed to load products. Please try again later.
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            loadProducts();
+
+            // Search functionality
+            $('#searchButton').click(function() {
+                loadProducts($('#searchInput').val());
+            });
+
+            $('#searchInput').keypress(function(e) {
+                if (e.which === 13) { // Enter key
+                    loadProducts($('#searchInput').val());
+                }
+            });
+        });
+
+        function loadProducts(searchTerm = '') {
+            $('#loadingSpinner').removeClass('d-none');
+            $('#productsTable tbody').empty();
+            $('#errorAlert').addClass('d-none');
+
+            $.ajax({
+                url: 'https://www.pqstec.com/InvoiceApps/values/GetProductListAll',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    $('#loadingSpinner').addClass('d-none');
+
+                    if (searchTerm) {
+                        searchTerm = searchTerm.toLowerCase();
+                        data = data.filter(function(product) {
+                            return (
+                                (product.Code && product.Code.toLowerCase().includes(searchTerm)) ||
+                                (product.Name && product.Name.toLowerCase().includes(searchTerm)) ||
+                                (product.CategoryName && product.CategoryName.toLowerCase().includes(searchTerm))
+                            );
+                        });
+                    }
+
+                    if (data.length === 0) {
+                        $('#productsTable tbody').append(
+                            '<tr><td colspan="6" class="text-center">No products found</td></tr>'
+                        );
+                        return;
+                    }
+
+                    $.each(data, function(index, product) {
+                        $('#productsTable tbody').append(
+                            '<tr>' +
+                            '<td>' + (product.Code || 'N/A') + '</td>' +
+                            '<td>' + (product.Name || 'N/A') + '</td>' +
+                            '<td>' + (product.CategoryName || 'N/A') + '</td>' +
+                            '<td>' + (product.Price ? '$' + product.Price.toFixed(2) : 'N/A') + '</td>' +
+                            '<td>' + (product.stock !== undefined ? product.stock : 'N/A') + '</td>' +
+                            '<td>' +
+                            '<button class="btn btn-sm btn-info view-details" data-id="' + product.Id + '">Details</button>' +
+                            '</td>' +
+                            '</tr>'
+                        );
+                    });
+
+                    // Add click handler for details buttons
+                    $('.view-details').click(function() {
+                        const productId = $(this).data('id');
+                        const product = data.find(p => p.Id === productId);
+                        showProductDetails(product);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    $('#loadingSpinner').addClass('d-none');
+                    $('#errorAlert').removeClass('d-none').text('Error: ' + error);
+                }
+            });
+        }
+
+        function showProductDetails(product) {
+            // Create a modal or display in a predefined area
+            const detailsHtml = `
+                <div class="modal fade" id="productDetailsModal" tabindex="-1" aria-labelledby="productDetailsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="productDetailsModalLabel">Product Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Code:</strong> ${product.Code || 'N/A'}</p>
+                                        <p><strong>Name:</strong> ${product.Name || 'N/A'}</p>
+                                        <p><strong>Local Name:</strong> ${product.LocalName || 'N/A'}</p>
+                                        <p><strong>Category:</strong> ${product.CategoryName || 'N/A'}</p>
+                                        <p><strong>Unit:</strong> ${product.UnitName || 'N/A'}</p>
+                                        <p><strong>Brand:</strong> ${product.BrandName || 'N/A'}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Price:</strong> ${product.Price ? '$' + product.Price.toFixed(2) : 'N/A'}</p>
+                                        <p><strong>Cost Price:</strong> ${product.CostPrice ? '$' + product.CostPrice.toFixed(2) : 'N/A'}</p>
+                                        <p><strong>Stock:</strong> ${product.stock !== undefined ? product.stock : 'N/A'}</p>
+                                        <p><strong>Barcode:</strong> ${product.ProductBarcode || 'N/A'}</p>
+                                        <p><strong>Status:</strong> ${product.Status || 'N/A'}</p>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <p><strong>Description:</strong> ${product.Description || 'N/A'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Append modal to body if not already there
+            if ($('#productDetailsModal').length === 0) {
+                $('body').append(detailsHtml);
+            } else {
+                $('#productDetailsModal').replaceWith(detailsHtml);
+            }
+
+            // Show the modal
+            var modal = new bootstrap.Modal(document.getElementById('productDetailsModal'));
+            modal.show();
+        }
+    </script>
+}
