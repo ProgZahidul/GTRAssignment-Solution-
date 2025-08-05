@@ -1,0 +1,6 @@
+@GTR.WebAPI_HostAddress = http://localhost:5269
+
+GET {{GTR.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
