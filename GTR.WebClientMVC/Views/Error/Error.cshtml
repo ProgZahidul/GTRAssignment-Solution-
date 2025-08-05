@@ -1,0 +1,23 @@
+﻿@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2 text-center">
+            <h1 class="text-danger">Error @ViewBag.StatusCode</h1>
+            <h2 class="text-danger">@ViewBag.ErrorMessage</h2>
+
+            @if (ViewBag.StatusCode == 404)
+            {
+                <p>The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.</p>
+            }
+            else
+            {
+                <p>We're sorry, an error occurred while processing your request.</p>
+            }
+
+            <a href="@Url.Action("Index", "Home")" class="btn btn-primary mt-3">Return Home</a>
+        </div>
+    </div>
+</div>
