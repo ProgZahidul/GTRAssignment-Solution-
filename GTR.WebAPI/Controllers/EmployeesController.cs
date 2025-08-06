@@ -1,4 +1,5 @@
-﻿using GTR.WebAPI.Dtos;
+﻿using GTR.WebAPI.Data;
+using GTR.WebAPI.Dtos;
 using GTR.WebAPI.Models;
 using GTR.WebAPI.Repositories;
 using Microsoft.AspNetCore.Http;
@@ -12,17 +13,22 @@ namespace GTR.WebAPI.Controllers
     public class EmployeesController : ControllerBase
     {
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly ApplicationDbContext _context;
 
-        public EmployeesController(IEmployeeRepository employeeRepository)
+        public EmployeesController(IEmployeeRepository employeeRepository, ApplicationDbContext context)
         {
             _employeeRepository = employeeRepository;
+            _context = context;
         }
 
-       
         [HttpGet]
         public async Task<ActionResult<IEnumerable<EmployeeDto>>> GetEmployees()
         {
-            var employees = await _employeeRepository.GetAllEmployeesAsync();
+            var employees = await _context.Employees
+                .Include(e => e.Department)
+                .Include(e => e.Designation)
+                .ToListAsync();
+
             var employeeDtos = employees.Select(e => new EmployeeDto
             {
                 EmployeeId = e.EmployeeId,
@@ -32,22 +38,26 @@ namespace GTR.WebAPI.Controllers
                 Salary = e.Salary,
                 IsActive = e.IsActive,
                 DepartmentId = e.DepartmentId,
-                DesignationId = e.DesignationId
+                DepartmentName = e.Department?.DepartmentName,
+                DesignationId = e.DesignationId,
+                DesignationName = e.Designation?.DesignationName
             });
 
             return Ok(employeeDtos);
         }
 
-     
+
+
         [HttpGet("{id}")]
         public async Task<ActionResult<EmployeeDto>> GetEmployee(int id)
         {
-            var employee = await _employeeRepository.GetEmployeeByIdAsync(id);
+            var employee = await _context.Employees
+                .Include(e => e.Department)
+                .Include(e => e.Designation)
+                .FirstOrDefaultAsync(e => e.EmployeeId == id);
 
             if (employee == null)
-            {
                 return NotFound();
-            }
 
             var employeeDto = new EmployeeDto
             {
@@ -58,13 +68,16 @@ namespace GTR.WebAPI.Controllers
                 Salary = employee.Salary,
                 IsActive = employee.IsActive,
                 DepartmentId = employee.DepartmentId,
-                DesignationId = employee.DesignationId
+                DepartmentName = employee.Department?.DepartmentName,
+                DesignationId = employee.DesignationId,
+                DesignationName = employee.Designation?.DesignationName
             };
 
             return employeeDto;
         }
 
-        
+
+
         [HttpPost]
         public async Task<ActionResult<EmployeeDto>> PostEmployee(EmployeeCreateDto employeeCreateDto)
         {
@@ -156,6 +169,17 @@ namespace GTR.WebAPI.Controllers
         private async Task<bool> EmployeeExists(int id)
         {
             return await _employeeRepository.GetEmployeeByIdAsync(id) != null;
+        }
+        [HttpGet("departments")]
+        public async Task<ActionResult<IEnumerable<Department>>> GetDepartments()
+        {
+            return await _context.Departments.ToListAsync();
+        }
+
+        [HttpGet("designations")]
+        public async Task<ActionResult<IEnumerable<Designation>>> GetDesignations()
+        {
+            return await _context.Designations.ToListAsync();
         }
     }
 }

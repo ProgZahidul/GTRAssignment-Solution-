@@ -2,6 +2,7 @@
 using GTR.WebClientMVC.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Reflection;
 
 namespace GTR.WebClientMVC.Controllers
 {
@@ -46,83 +47,83 @@ namespace GTR.WebClientMVC.Controllers
                 return NotFound();
             }
         }
-
-        // GET: Employees/Create
+        [HttpGet]
         public async Task<IActionResult> Create()
         {
             await LoadDropdowns();
-            return View();
+            return View(new EmployeeViewModel());
         }
 
-        // POST: Employees/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(EmployeeViewModel employee)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    var response = await _apiService.CreateEmployeeAsync(employee);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        TempData["SuccessMessage"] = "Employee created successfully";
-                        return RedirectToAction(nameof(Index));
-                    }
-                    ModelState.AddModelError(string.Empty, "Error creating employee");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error creating employee");
-                    ModelState.AddModelError(string.Empty, "Error creating employee");
-                }
+                await LoadDropdowns(employee);
+                return View(employee);
             }
+
+            var (success, error) = await _apiService.CreateEmployeeAsync(employee);
+
+            if (success)
+            {
+                TempData["SuccessMessage"] = "Employee created successfully";
+                return RedirectToAction(nameof(Index));
+            }
+
+            ModelState.AddModelError(string.Empty, error ?? "Failed to create employee");
+            await LoadDropdowns(employee);
+            return View(employee);
+        }
+
+        private async Task LoadDropdowns(EmployeeViewModel model = null)
+        {
+            var departments = await _apiService.GetDepartmentsAsync();
+            var designations = await _apiService.GetDesignationsAsync();
+
+            ViewBag.DepartmentList = new SelectList(departments, "DepartmentId", "DepartmentName", model?.DepartmentId);
+            ViewBag.DesignationList = new SelectList(designations, "DesignationId", "DesignationName", model?.DesignationId);
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var employee = await _apiService.GetEmployeeAsync(id);
+            if (employee == null)
+            {
+                return NotFound();
+            }
+
             await LoadDropdowns();
             return View(employee);
         }
 
-        // GET: Employees/Edit/5
-        public async Task<IActionResult> Edit(int id)
-        {
-            try
-            {
-                var employee = await _apiService.GetEmployeeAsync(id);
-                if (employee == null) return NotFound();
-                await LoadDropdowns();
-                return View(employee);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error getting employee for edit with id {id}");
-                return NotFound();
-            }
-        }
-
-        // POST: Employees/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, EmployeeViewModel employee)
         {
-            if (id != employee.EmployeeId) return NotFound();
-
-            if (ModelState.IsValid)
+            if (id != employee.EmployeeId)
             {
-                try
-                {
-                    var response = await _apiService.UpdateEmployeeAsync(employee);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        TempData["SuccessMessage"] = "Employee updated successfully";
-                        return RedirectToAction(nameof(Index));
-                    }
-                    ModelState.AddModelError(string.Empty, "Error updating employee");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Error updating employee with id {id}");
-                    ModelState.AddModelError(string.Empty, "Error updating employee");
-                }
+                return NotFound();
             }
+
+            if (!ModelState.IsValid)
+            {
+                await LoadDropdowns();
+                return View(employee);
+            }
+
+            var (success, error) = await _apiService.UpdateEmployeeAsync(employee);
+
+            if (success)
+            {
+                TempData["SuccessMessage"] = "Employee updated successfully";
+                return RedirectToAction(nameof(Index));
+            }
+
+            ModelState.AddModelError(string.Empty, error ?? "Failed to update employee");
             await LoadDropdowns();
             return View(employee);
         }
@@ -167,22 +168,39 @@ namespace GTR.WebClientMVC.Controllers
             }
         }
 
-        private async Task LoadDropdowns()
-        {
-            try
-            {
-                var departments = await _apiService.GetDepartmentsAsync() ?? new List<DepartmentViewModel>();
-                var designations = await _apiService.GetDesignationsAsync() ?? new List<DesignationViewModel>();
+        //private async Task LoadDropdowns(EmployeeViewModel model = null)
+        //{
+        //    try
+        //    {
+        //        // Get both datasets in parallel for better performance
+        //        var departmentsTask = _apiService.GetDepartmentsAsync();
+        //        var designationsTask = _apiService.GetDesignationsAsync();
+        //        await Task.WhenAll(departmentsTask, designationsTask);
 
-                ViewBag.DepartmentList = new SelectList(departments, "DepartmentId", "DepartmentName");
-                ViewBag.DesignationList = new SelectList(designations, "DesignationId", "DesignationName");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading dropdowns");
-                ViewBag.DepartmentList = new SelectList(new List<DepartmentViewModel>(), "DepartmentId", "DepartmentName");
-                ViewBag.DesignationList = new SelectList(new List<DesignationViewModel>(), "DesignationId", "DesignationName");
-            }
-        }
+        //        // Determine if we're in Edit mode by checking the current action
+        //        var isEditAction = ControllerContext.ActionDescriptor.ActionName.Equals("Edit", StringComparison.OrdinalIgnoreCase);
+
+        //        ViewBag.DepartmentList = new SelectList(
+        //            departmentsTask.Result ?? new List<DepartmentViewModel>(),
+        //            "DepartmentId",
+        //            "DepartmentName",
+        //            isEditAction && model != null ? model.DepartmentId : null
+        //        );
+
+        //        ViewBag.DesignationList = new SelectList(
+        //            designationsTask.Result ?? new List<DesignationViewModel>(),
+        //            "DesignationId",
+        //            "DesignationName",
+        //            isEditAction && model != null ? model.DesignationId : null
+        //        );
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error loading dropdowns");
+        //        // Provide fallback empty lists
+        //        ViewBag.DepartmentList = new SelectList(new List<DepartmentViewModel>(), "DepartmentId", "DepartmentName");
+        //        ViewBag.DesignationList = new SelectList(new List<DesignationViewModel>(), "DesignationId", "DesignationName");
+        //    }
+        //}
     }
 }
