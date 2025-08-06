@@ -152,15 +152,4 @@ dotnet tool update --global dotnet-ef
 
 **Sayed Zahidul Hoque**
 Phone: 01685866059
-Email: \[[your.email@example.com](mailto:your.email@example.com)]
 
----
-
-Thank you for reviewing my assignment solution. I look forward to your feedback!
-
-```
-
----
-
-Let me know if you want me to generate a downloadable README.md file for you!
-```
