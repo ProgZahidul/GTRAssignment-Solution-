@@ -151,5 +151,4 @@ dotnet tool update --global dotnet-ef
 ## Contact
 
 **Sayed Zahidul Hoque**
-Phone: 01685866059
 
