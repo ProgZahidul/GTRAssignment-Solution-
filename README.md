@@ -1,7 +1,8 @@
 
 # GTRAssignment-Solution
 
-Complete solution for **INTERN ASP.NET** assignment at **Genuine Technology & Research Ltd.**
+This project is the complete solution for the ASP.NET assignment provided by Genuine Technology & Research Ltd. as part of the INTERN ASP.NET interview process. It implements JWT-based authentication for secure API access.
+
 Includes an ASP.NET Core Web API backend and an MVC Client App with jQuery frontend.
 
 ---
@@ -10,7 +11,7 @@ Includes an ASP.NET Core Web API backend and an MVC Client App with jQuery front
 
 ### Backend: ASP.NET Core Web API
 
-* ASP.NET Identity login with cookie authentication
+* JWT authentication using **ASP.NET Identity**
 * Clean architecture: Controller → Service → Repository → DbContext
 * Master-detail CRUD for EmployeeInfo, Department, Designation
 * EF Core with SQL Server, migrations managed
@@ -24,7 +25,7 @@ Includes an ASP.NET Core Web API backend and an MVC Client App with jQuery front
 ### Frontend: ASP.NET Core MVC Client
 
 * Razor views with jQuery/AJAX (no full page reloads)
-* CRUD operations via Web API calls
+* CRUD operations via Web API calls with JWT token in headers
 * Master-detail form with dropdowns for Department & Designation
 * Dynamic product list from external API:
   `https://www.pqstec.com/InvoiceApps/values/GetProductListAll`
@@ -37,7 +38,7 @@ Includes an ASP.NET Core Web API backend and an MVC Client App with jQuery front
 * ASP.NET Core Web API & MVC
 * Entity Framework Core
 * SQL Server
-* ASP.NET Identity
+* ASP.NET Identity with JWT Authentication
 * jQuery / AJAX
 
 ---
@@ -91,7 +92,7 @@ Includes an ASP.NET Core Web API backend and an MVC Client App with jQuery front
 
 ## Usage
 
-* Register/login via MVC frontend
+* Register/login via MVC frontend using JWT authentication
 * Manage Employees, Departments, Designations
 * View live product list from external API
 
@@ -113,3 +114,4 @@ Includes an ASP.NET Core Web API backend and an MVC Client App with jQuery front
 ## Contact
 
 **Sayed Zahidul Hoque**
+
